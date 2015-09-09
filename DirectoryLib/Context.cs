@@ -201,21 +201,21 @@ namespace Wdc.DirectoryLib
         }
 
         /// <summary>
-        /// Convert DomainName (exmpl.wdc.com) to NetBiosName (sc)
+        /// Convert DomainName (exmpl.wdc.com) to NetBiosName (exmpl)
         /// </summary>
-        /// <param name="dn">Domain Name (exmpl.wdc.com)</param>
-        /// <returns>NetBiosName (sc)</returns>
-        public string GetNetBiosNameByDomainName(string dn)
+        /// <param name="domainName">Domain Name (exmpl.wdc.com)</param>
+        /// <returns>NetBiosName (exmpl)</returns>
+        public string GetNetBiosNameByDomainName(string domainName)
         {
             string distinguishedName = string.Empty;
-            Match m1 = Regex.Match(dn, @"(?:(?:dc=\w+),?)+");
-            Match m2 = Regex.Match(dn, @"(\w+.?)+");
+            Match m1 = Regex.Match(domainName, @"(?:(?:dc=\w+),?)+");
+            Match m2 = Regex.Match(domainName, @"(\w+.?)+");
 
             if (m1.Success)
-                distinguishedName = dn;
+                distinguishedName = domainName;
             else if (m2.Success)
             {
-                distinguishedName = Regex.Replace(dn, @"\w+.?", delegate(Match match)
+                distinguishedName = Regex.Replace(domainName, @"\w+.?", delegate(Match match)
                 {
                     return string.Format("DC={0}", match.Groups[0].Value).Replace('.', ',');
                 });
@@ -237,9 +237,9 @@ namespace Wdc.DirectoryLib
         }
 
         /// <summary>
-        /// Convert NetBiosName (sc) to DomainName (exmpl.wdc.com)
+        /// Convert NetBiosName (exmpl) to DomainName (exmpl.wdc.com)
         /// </summary>
-        /// <param name="netBiosName">NetBiosName (sc)</param>
+        /// <param name="netBiosName">NetBiosName (exmpl)</param>
         /// <returns>DomainName (exmpl.wdc.com)</returns>
         public string GetDomainNameByNetBios(string netBiosName)
         {
