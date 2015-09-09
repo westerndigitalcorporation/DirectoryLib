@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("DirectoryLib")]
 [assembly: AssemblyDescription("A wrapper library for Active Directory (LDAP) authentication")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Wdc")]
+[assembly: AssemblyCompany("Western Digital Corporation")]
 [assembly: AssemblyProduct("DirectoryLib")]
 [assembly: AssemblyCopyright("Copyright © WDC 2015")]
 [assembly: AssemblyTrademark("")]
