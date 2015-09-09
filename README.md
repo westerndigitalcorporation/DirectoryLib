@@ -1,5 +1,12 @@
 # DirectoryLib
-A wrapper library for Active Directory (LDAP) authentication in C#.
+A wrapper library for Active Directory (LDAP) authentication in .NET
+
+## Install
+
+Use the Package Manager Console to install the latest [Wdc.DirectoryLib](https://www.nuget.org/packages/Wdc.DirectoryLib/) package.
+```
+Install-Package Wdc.DirectoryLib
+```
 
 ## Usage
 ```cs
