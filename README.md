@@ -33,7 +33,7 @@ switch (status)
 ```
 
 ## Why?
-Here at [WD](http://wdc.com), each employee has an account in [Active Directory](https://en.wikipedia.org/wiki/Active_Directory) they use to sign into Windows. Most of our apps query Active Directory as a means to authenticate users and read attributes about the user such as name, email, and city.
+Here at [Western Digital](http://wdc.com), each employee has an account in [Active Directory](https://en.wikipedia.org/wiki/Active_Directory) they use to sign into Windows. Most of our apps query Active Directory as a means to authenticate users and read attributes about the user such as name, email, and city.
 
 We found our developers were often reinventing the wheel, so this library is an attempt to consolidate our efforts by making a C# wrapper that is type safe and easy to use.
 
@@ -41,6 +41,8 @@ We found our developers were often reinventing the wheel, so this library is an 
 Building requires Visual Studio 2010 or better. We are using Visual Studio 2015. Alternatively, you can use `msbuild` on the command line.
 
 The Target Framework is .NET 3.5 so it will work in legacy 2.0 runtime or the newer 4.0 runtime.
+
+Build and package with nuget: `nuget pack Wdc.DirectoryLib.csproj`
 
 ## Contributing
 Pull requests are welcome! We currently do not have any public tests available, but send us a pull request and we'll try it out and merge it in.

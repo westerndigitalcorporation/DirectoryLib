@@ -38,6 +38,9 @@ x64/
 [Bb]in/
 [Oo]bj/
 
+# Nuget.org executable used for packaging
+nuget.exe
+
 # =========================
 # Operating System Files
 # =========================
