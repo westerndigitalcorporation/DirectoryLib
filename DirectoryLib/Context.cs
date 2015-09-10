@@ -159,7 +159,7 @@ namespace Wdc.DirectoryLib
         /// <param name="daysToExpiration">The number of days until the password expires</param>
         public AccountStatus Authenticate(UserAccount user, string password, int daysToExpiration=89)
         {
-            AccountStatus status = AccountStatus.USER_NOT_FOUND;
+            AccountStatus status = AccountStatus.UserNotFound;
 
             if (user != null)
             {
@@ -168,31 +168,31 @@ namespace Wdc.DirectoryLib
                 {
                     if (u == null)
                     {
-                        status = AccountStatus.USER_NOT_FOUND;
+                        status = AccountStatus.UserNotFound;
                     }
                     else if (u.PasswordNotRequired)
                     {
-                        status = AccountStatus.PASS_CORRECT;
+                        status = AccountStatus.Success;
                     }
                     else if (pc.ValidateCredentials(user.SamAccountName, password))
                     {
-                        status = AccountStatus.PASS_CORRECT;
+                        status = AccountStatus.Success;
                     }
                     else if (u.IsAccountLockedOut())
                     {
-                        status = AccountStatus.USER_LOCKED_OUT;
+                        status = AccountStatus.UserLockedOut;
                     }
                     else if (!u.PasswordNeverExpires && u.LastPasswordSet == null)
                     {
-                        status = AccountStatus.PASS_MUST_CHANGE;
+                        status = AccountStatus.MustChangePassword;
                     }
                     else if (!u.PasswordNeverExpires && (DateTime.Now - u.LastPasswordSet).Value.Days > daysToExpiration)
                     {
-                        status = AccountStatus.PASS_EXPIRED;
+                        status = AccountStatus.ExpiredPassword;
                     }
                     else
                     {
-                        status = AccountStatus.PASS_INCORRECT;
+                        status = AccountStatus.InvalidPassword;
                     }
                 }
             }

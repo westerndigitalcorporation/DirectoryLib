@@ -25,33 +25,33 @@ namespace Wdc.DirectoryLib.Types
     public enum AccountStatus
     {
         /// <summary>
-        /// The user supplied the correct password.
+        /// No user found matching the supplied account credentials. Typically a typo.
         /// </summary>
-        PASS_CORRECT = 0,
+        UserNotFound = 0,
 
         /// <summary>
-        /// The user supplied the wrong password.
+        /// The user supplied the correct credentials and successfully authenticated.
         /// </summary>
-        PASS_INCORRECT,
+        Success,
 
         /// <summary>
-        /// No user found matching the supplied account credentials.
+        /// The user supplied the wrong password for the account.
         /// </summary>
-        USER_NOT_FOUND,
+        InvalidPassword,
 
         /// <summary>
-        /// The user's password has expired and must be changed.
+        /// The user's password is expired and must be changed. Typically this expires every 90 days.
         /// </summary>
-        PASS_EXPIRED,
+        ExpiredPassword,
 
         /// <summary>
-        /// The "user must change password at next logon" since LastPasswordSet=null
+        /// The "user must change password at next logon" since LastPasswordSet=null. Typically for new accounts.
         /// </summary>
-        PASS_MUST_CHANGE,
+        MustChangePassword,
 
         /// <summary>
-        /// The user account is locked. Typically, too many incorrect attempts.
+        /// The user account is locked. Typically too many incorrect attempts.
         /// </summary>
-        USER_LOCKED_OUT
+        UserLockedOut
     }
 }
