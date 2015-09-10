@@ -50,10 +50,11 @@ Building requires Visual Studio 2010 or better. We are using Visual Studio 2015.
 The Target Framework is .NET 3.5 so it will work in legacy 2.0 runtime or the newer 4.0 runtime.
 
 ## Packaging
-1. Increment version in the `.nuspec` file
+1. Increment `<version>` and update `<releaseNotes>` in the `.nuspec` file
 2. Download `nuget.exe` from http://nuget.org
 3. Run `nuget.exe pack Wdc.DirectoryLib.csproj` which will build as Release and create a `.nupkg` file
 4. Upload the new package to nuget.org
+5. Zip binaries and attach to [GitHub releases](https://github.com/westerndigitalcorporation/DirectoryLib/releases)
 
 ## Contributing
 Pull requests are welcome! We currently do not have any public tests available, but send us a pull request and we'll try it out and merge it in.

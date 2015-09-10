@@ -3,6 +3,7 @@
   <metadata>
     <id>$id$</id>
     <version>2.0.0</version>
+	<releaseNotes>Changing AccountStatus enum to Pascal case.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
@@ -10,7 +11,6 @@
     <projectUrl>https://github.com/westerndigitalcorporation/DirectoryLib</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>Active Directory Authentication Library</tags>
   </metadata>
