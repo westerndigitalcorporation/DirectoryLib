@@ -1,5 +1,9 @@
 # DirectoryLib
+
 A wrapper library for Active Directory (LDAP) authentication in .NET
+
+[![Version](https://img.shields.io/nuget/v/Wdc.DirectoryLib.svg)](https://www.nuget.org/packages/Wdc.DirectoryLib/)
+[![Downloads](https://img.shields.io/nuget/dt/Wdc.DirectoryLib.svg)](https://www.nuget.org/packages/Wdc.DirectoryLib/)
 
 ## Install
 
@@ -45,14 +49,17 @@ Here at [Western Digital](http://wdc.com), each employee has an account in [Acti
 We found our developers were often reinventing the wheel, so this library is an attempt to consolidate our efforts by making a C# wrapper that is type safe and easy to use.
 
 ## Building
-Building requires Visual Studio 2010 or better. We are using Visual Studio 2015. Alternatively, you can use `msbuild` on the command line.
+Requirements:
 
-The Target Framework is .NET 3.5 so it will work in legacy 2.0 runtime or the newer 4.0 runtime.
+* Visual Studio 2015 (VS 2010+ will work)
+* Target Framework .NET 3.5
+
+Run `msbuild Wdc.DirectoryLib.csproj` to build as Release.
 
 ## Packaging
 1. Increment `<version>` and update `<releaseNotes>` in the `.nuspec` file
 2. Download `nuget.exe` from http://nuget.org
-3. Run `nuget.exe pack Wdc.DirectoryLib.csproj` which will build as Release and create a `.nupkg` file
+3. Run `nuget pack Wdc.DirectoryLib.csproj` to build and generate `.nupkg` file
 4. Upload the new package to nuget.org
 5. Zip binaries and attach to [GitHub releases](https://github.com/westerndigitalcorporation/DirectoryLib/releases)
 
