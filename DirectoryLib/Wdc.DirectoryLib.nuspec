@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.0.0</version>
-	<releaseNotes>Changing AccountStatus enum to Pascal case.</releaseNotes>
+    <version>2.0.1</version>
+	<releaseNotes>Added support for checking password expiration policy.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
