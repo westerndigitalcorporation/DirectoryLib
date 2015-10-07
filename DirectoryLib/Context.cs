@@ -39,7 +39,7 @@ namespace Wdc.DirectoryLib
         /// <param name="gcHostname">The Global Catelog Hostname a Domain Controller.
         /// If no hostname is provided, the current context is used.
         /// </param>
-        public Context(string gcHostname="")
+        public Context(string gcHostname = "")
         {
             if (string.IsNullOrEmpty(gcHostname))
             {
@@ -68,7 +68,7 @@ namespace Wdc.DirectoryLib
             {
                 throw new ArgumentException("Invalid argument: samAccountName is null or empty", "samAccountName");
             }
-            
+
             string branch = "DC=" + domain.Replace(".", ",DC=");
             string path = string.Format("GC://{0}/{1}", gcHostname, branch);
             string filter = string.Format("(&(objectClass=person)(samAccountName={0}))", samAccountName);
@@ -150,15 +150,21 @@ namespace Wdc.DirectoryLib
             }
             return GetUser(domain, samName);
         }
-        
+
         /// <summary>
         /// Perform authentication and return the status for the account.
         /// </summary>
         /// <param name="user">The user account object</param>
         /// <param name="password">The user password in plaintext</param>
         /// <param name="daysToExpiration">The number of days until the password expires</param>
-        public AccountStatus Authenticate(UserAccount user, string password, int daysToExpiration=89)
+        public AccountStatus Authenticate(UserAccount user, string password, long daysToExpiration = 0)
         {
+            if (daysToExpiration == 0)
+            {
+                // If the caller does not provide expiration, use the domain policy
+                daysToExpiration = GetMaxPasswordAgeInDays(user.Domain);
+            }
+
             AccountStatus status = AccountStatus.UserNotFound;
 
             if (user != null)
@@ -186,7 +192,7 @@ namespace Wdc.DirectoryLib
                     {
                         status = AccountStatus.MustChangePassword;
                     }
-                    else if (!u.PasswordNeverExpires && (DateTime.Now - u.LastPasswordSet).Value.Days > daysToExpiration)
+                    else if (!u.PasswordNeverExpires && (DateTime.Now - u.LastPasswordSet.Value).TotalDays >= daysToExpiration)
                     {
                         status = AccountStatus.ExpiredPassword;
                     }
@@ -243,7 +249,7 @@ namespace Wdc.DirectoryLib
         public string GetDomainNameByNetBios(string netBiosName)
         {
             string domainName = null;
-            
+
             using (DirectoryEntry entry = new DirectoryEntry(string.Format("GC://{0}", gcHostname)))
             using (DirectorySearcher search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(dc={0}))", netBiosName)))
             {
@@ -256,7 +262,36 @@ namespace Wdc.DirectoryLib
             }
 
             return domainName;
-            
+        }
+
+        /// <summary>
+        /// Gets the maxPwdAge property on the domain (exmpl.wdc.com).
+        /// This is days until the password expires unless the account has PasswordNeverExpires.
+        /// </summary>
+        /// <param name="domain">Domain Name (exmpl.wdc.com)</param>
+        /// <returns>Days until a password expires</returns>
+        public long GetMaxPasswordAgeInDays(string domain)
+        {
+            long days = 0;
+            const long NS_IN_A_DAY = -864000000000;
+
+            string branch = "DC=" + domain.Replace(".", ",DC=");
+            string path = string.Format("LDAP://{0}/{1}", domain, branch);
+            string filter = "(maxPwdAge=*)";
+
+            using (var entry = new DirectoryEntry(path))
+            using (var search = new DirectorySearcher(entry, filter, new string[] { "+", "*" }, SearchScope.Base))
+            {
+                var result = search.FindOne();
+                if (result.Properties.Contains("maxPwdAge"))
+                {
+                    long maxPwdAge = TryGetResult<long>(result, "maxPwdAge");
+
+                    days = maxPwdAge / NS_IN_A_DAY;
+                }
+            }
+
+            return days;
         }
 
         private T TryGetResult<T>(SearchResult result, string key)
