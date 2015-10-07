@@ -208,31 +208,30 @@ namespace Wdc.DirectoryLib
         public string GetNetBiosNameByDomainName(string domainName)
         {
             string distinguishedName = string.Empty;
-            Match m1 = Regex.Match(domainName, @"(?:(?:dc=\w+),?)+");
-            Match m2 = Regex.Match(domainName, @"(\w+.?)+");
 
-            if (m1.Success)
-                distinguishedName = domainName;
-            else if (m2.Success)
+            if (Regex.Match(domainName, @"(?:(?:dc=\w+),?)+").Success)
             {
-                distinguishedName = Regex.Replace(domainName, @"\w+.?", delegate(Match match)
-                {
-                    return string.Format("DC={0}", match.Groups[0].Value).Replace('.', ',');
-                });
+                distinguishedName = domainName;
+            }
+            else if (Regex.Match(domainName, @"(\w+.?)+").Success)
+            {
+                distinguishedName = Regex.Replace(
+                    domainName,
+                    @"\w+.?",
+                    (Match m) => string.Format("DC={0}", m.Groups[0].Value).Replace('.', ',')
+                );
             }
             else
-                throw new ArgumentException("Invalid format", "dn");
-
-            using (var entry = new DirectoryEntry("GC://" + gcHostname))
             {
-                using (var search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(distinguishedName={0}))", distinguishedName)))
-                {
-                    SearchResult result = search.FindOne();
-                    if (result != null)
-                        return TryGetResult<string>(result, "dc");
+                throw new ArgumentException("Invalid format", "dn");
+            }
 
-                    return null;
-                }
+            using (DirectoryEntry entry = new DirectoryEntry(string.Format("GC://{0}", gcHostname)))
+            using (var search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(distinguishedName={0}))", distinguishedName)))
+            {
+                SearchResult result = search.FindOne();
+
+                return result == null ? null : TryGetResult<string>(result, "dc");
             }
         }
 
