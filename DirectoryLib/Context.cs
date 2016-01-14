@@ -69,8 +69,7 @@ namespace Wdc.DirectoryLib
                 throw new ArgumentException("Invalid argument: samAccountName is null or empty", "samAccountName");
             }
 
-            string branch = "DC=" + domain.Replace(".", ",DC=");
-            string path = string.Format("GC://{0}/{1}", gcHostname, branch);
+            string path = GetGCPath(domain);
             string filter = string.Format("(&(objectClass=person)(samAccountName={0}))", samAccountName);
 
             using (var entry = new DirectoryEntry(path))
@@ -83,55 +82,72 @@ namespace Wdc.DirectoryLib
                 }
                 else
                 {
+                    return GetUserFromResult(result);
+                }
+            }
+        }
 
-                    // Values can be found here:
-                    // http://msdn.microsoft.com/en-us/library/ms679021(v=vs.85).aspx
-                    return new UserAccount()
-                    {
-                        ObjectGuid = TryGetResult<byte[]>(result, "objectGUID"),
-                        CommonName = TryGetResult<string>(result, "cn"),
-                        DisplayName = TryGetResult<string>(result, "displayName"),
-                        GivenName = TryGetResult<string>(result, "givenName"),
-                        SurName = TryGetResult<string>(result, "sn"),
-                        Email = TryGetResult<string>(result, "mail"),
-                        Department = TryGetResult<string>(result, "department"),
-                        Title = TryGetResult<string>(result, "title"),
-                        LocalityName = TryGetResult<string>(result, "l"),
-                        StateOrProvinceName = TryGetResult<string>(result, "st"),
-                        CountryName = TryGetResult<string>(result, "c"),
-                        Phone = TryGetResult<string>(result, "telephoneNumber"),
-                        Mobile = TryGetResult<string>(result, "mobile"),
-                        PhysicalDeliveryOfficeName = TryGetResult<string>(result, "physicalDeliveryOfficeName"),
-                        Description = TryGetResult<string>(result, "description"),
-                        JpegPhoto = TryGetResult<byte[]>(result, "thumbnailPhoto"),
-                        Domain = domain,
-                        SamAccountName = TryGetResult<string>(result, "samAccountName"),
-                        UserPrincipalName = TryGetResult<string>(result, "userPrincipalName")
-                    };
+        /// <summary>
+        /// Get user by email address (user@exampl.wdc.com)
+        /// If the domain is not provided, it searches the entire directory.
+        /// </summary>
+        /// <param name="email">Email address (user@exmpl.wdc.com)</param>
+        /// <param name="domain">Optional domain (exmpl.wdc.com)</param>
+        public UserAccount GetUserByEmail(string email, string domain = null)
+        {
+            string path = GetGCPath(domain);
+
+            string filter = string.Format("(&(objectClass=person)(mail={0}))", email);
+
+            using (var entry = new DirectoryEntry(path))
+            using (var search = new DirectorySearcher(entry, filter))
+            {
+                SearchResult result = search.FindOne();
+                if (result == null)
+                {
+                    return null;
+                }
+                else
+                {   
+                    return GetUserFromResult(result);
                 }
 
             }
         }
-
+        
         /// <summary>
         /// Get user by UserPrincipalName (last_f@exmpl.wdc.com)
         /// </summary>
         /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
         public UserAccount GetUserByUpn(string upn)
         {
-            string[] a = upn.Split('@');
-            if (a.Length != 2)
+            string domain = GetDomainFromUpn(upn);
+            if (domain == null)
             {
                 throw new ArgumentException("Invalid upn '" + upn + "'. Expected one @ symbol.", "upn");
             }
-            string samName = a[0];
-            string domain = a[1];
-            return GetUser(domain, samName);
+
+            string path = GetGCPath(domain);
+            string filter = string.Format("(&(objectClass=person)(userPrincipalName={0}))", upn);
+
+            using (var entry = new DirectoryEntry(path))
+            using (var search = new DirectorySearcher(entry, filter))
+            {
+                SearchResult result = search.FindOne();
+                if (result == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return GetUserFromResult(result);
+                }
+            }
         }
 
         /// <summary>
         /// Get user by NT Name (exmpl\last_f).
-        /// This can be slower than other GetUser methods due to a call to GetDomainNameByNetBios
+        /// This can be slower than GetUser() and GetUserByUpn() due to a call to GetDomainNameByNetBios()
         /// </summary>
         /// <param name="ntName">NT Name (exmpl\last_f)</param>
         public UserAccount GetUserByNtName(string ntName)
@@ -250,7 +266,7 @@ namespace Wdc.DirectoryLib
         {
             string domainName = null;
 
-            using (DirectoryEntry entry = new DirectoryEntry(string.Format("GC://{0}", gcHostname)))
+            using (DirectoryEntry entry = new DirectoryEntry(GetGCPath()))
             using (DirectorySearcher search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(dc={0}))", netBiosName)))
             {
                 SearchResult result = search.FindOne();
@@ -294,6 +310,38 @@ namespace Wdc.DirectoryLib
             return days;
         }
 
+        /// <summary>
+        /// Returns UserAccount object from a given search result
+        /// </summary>
+        /// <param name="result">SearchResult computed by one of the other GetUser methods</param>
+        private UserAccount GetUserFromResult(SearchResult result)
+        {
+            // Values can be found here:
+            // http://msdn.microsoft.com/en-us/library/ms679021(v=vs.85).aspx
+            return new UserAccount()
+            {
+                ObjectGuid = TryGetResult<byte[]>(result, "objectGUID"),
+                CommonName = TryGetResult<string>(result, "cn"),
+                DisplayName = TryGetResult<string>(result, "displayName"),
+                GivenName = TryGetResult<string>(result, "givenName"),
+                SurName = TryGetResult<string>(result, "sn"),
+                Email = TryGetResult<string>(result, "mail"),
+                Department = TryGetResult<string>(result, "department"),
+                Title = TryGetResult<string>(result, "title"),
+                LocalityName = TryGetResult<string>(result, "l"),
+                StateOrProvinceName = TryGetResult<string>(result, "st"),
+                CountryName = TryGetResult<string>(result, "c"),
+                Phone = TryGetResult<string>(result, "telephoneNumber"),
+                Mobile = TryGetResult<string>(result, "mobile"),
+                PhysicalDeliveryOfficeName = TryGetResult<string>(result, "physicalDeliveryOfficeName"),
+                Description = TryGetResult<string>(result, "description"),
+                JpegPhoto = TryGetResult<byte[]>(result, "thumbnailPhoto"),
+                Domain = GetDomainFromUpn(TryGetResult<string>(result, "userPrincipalName")),
+                SamAccountName = TryGetResult<string>(result, "samAccountName"),
+                UserPrincipalName = TryGetResult<string>(result, "userPrincipalName")
+            };
+        }
+
         private T TryGetResult<T>(SearchResult result, string key)
         {
             var valueCollection = result.Properties[key];
@@ -303,5 +351,35 @@ namespace Wdc.DirectoryLib
                 return default(T);
         }
 
+        /// <summary>
+        /// Gets domain (exmpl.wdc.com) from upn (last_f@exmpl.wdc.com)
+        /// </summary>
+        /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
+        private string GetDomainFromUpn(string upn)
+        {
+            string[] a = upn.Split('@');
+            if (a.Length != 2)
+            {
+                return null;
+            }
+            return a[1];
+        }
+
+        private string GetGCPath(string domain = null)
+        {
+            string path;
+            if (!string.IsNullOrEmpty(domain))
+            {
+                string branch = "DC=" + domain.Replace(".", ",DC=");
+                path = string.Format("GC://{0}/{1}", gcHostname, branch);
+            }
+            else
+            {
+                path = string.Format("GC://{0}", gcHostname);
+            }
+
+            return path;
+
+        }
     }
 }
