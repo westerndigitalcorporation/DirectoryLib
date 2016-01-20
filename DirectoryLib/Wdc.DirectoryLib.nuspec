@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.0.1</version>
-	<releaseNotes>Added support for checking password expiration policy.</releaseNotes>
+    <version>2.0.2</version>
+	<releaseNotes>Added support for getting a user by email. Fixed bugs caused by assumptions about the format of UPNs.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
@@ -11,7 +11,7 @@
     <projectUrl>https://github.com/westerndigitalcorporation/DirectoryLib</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <copyright>Copyright 2015</copyright>
+    <copyright>Copyright 2016</copyright>
     <tags>Active Directory Authentication Library</tags>
   </metadata>
 </package>
