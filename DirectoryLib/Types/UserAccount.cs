@@ -143,6 +143,11 @@ namespace Wdc.DirectoryLib.Types
         public string Domain { get; set; }
 
         /// <summary>
+        /// Same as the Distinguished Name for an object. Used by Exchange
+        /// </summary>
+        public string DistinguishedName { get; set; }
+
+        /// <summary>
         /// The logon name used to support clients and servers running earlier versions of the operating system, 
         /// such as Windows NT 4.0, Windows 95, Windows 98, and LAN Manager.
         /// This attribute must be 20 characters or less to support earlier clients.

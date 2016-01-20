@@ -69,7 +69,8 @@ namespace Wdc.DirectoryLib
                 throw new ArgumentException("Invalid argument: samAccountName is null or empty", "samAccountName");
             }
 
-            string path = GetGCPath(domain);
+            string branch = "DC=" + domain.Replace(".", ",DC=");
+            string path = GetGCPath(branch);
             string filter = string.Format("(&(objectClass=person)(samAccountName={0}))", samAccountName);
 
             using (var entry = new DirectoryEntry(path))
@@ -89,14 +90,11 @@ namespace Wdc.DirectoryLib
 
         /// <summary>
         /// Get user by email address (user@exampl.wdc.com)
-        /// If the domain is not provided, it searches the entire directory.
         /// </summary>
         /// <param name="email">Email address (user@exmpl.wdc.com)</param>
-        /// <param name="domain">Optional domain (exmpl.wdc.com)</param>
-        public UserAccount GetUserByEmail(string email, string domain = null)
+        public UserAccount GetUserByEmail(string email)
         {
-            string path = GetGCPath(domain);
-
+            string path = GetGCPath();
             string filter = string.Format("(&(objectClass=person)(mail={0}))", email);
 
             using (var entry = new DirectoryEntry(path))
@@ -121,13 +119,7 @@ namespace Wdc.DirectoryLib
         /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
         public UserAccount GetUserByUpn(string upn)
         {
-            string domain = GetDomainFromUpn(upn);
-            if (domain == null)
-            {
-                throw new ArgumentException("Invalid upn '" + upn + "'. Expected one @ symbol.", "upn");
-            }
-
-            string path = GetGCPath(domain);
+            string path = GetGCPath();
             string filter = string.Format("(&(objectClass=person)(userPrincipalName={0}))", upn);
 
             using (var entry = new DirectoryEntry(path))
@@ -147,7 +139,7 @@ namespace Wdc.DirectoryLib
 
         /// <summary>
         /// Get user by NT Name (exmpl\last_f).
-        /// This can be slower than GetUser() and GetUserByUpn() due to a call to GetDomainNameByNetBios()
+        /// This can be slower than other GetUser() methods due to a call to GetDomainNameByNetBios()
         /// </summary>
         /// <param name="ntName">NT Name (exmpl\last_f)</param>
         public UserAccount GetUserByNtName(string ntName)
@@ -336,6 +328,7 @@ namespace Wdc.DirectoryLib
                 PhysicalDeliveryOfficeName = TryGetResult<string>(result, "physicalDeliveryOfficeName"),
                 Description = TryGetResult<string>(result, "description"),
                 JpegPhoto = TryGetResult<byte[]>(result, "thumbnailPhoto"),
+                DistinguishedName = TryGetResult<string>(result, "distinguishedName"),
                 Domain = GetDomainFromUpn(TryGetResult<string>(result, "userPrincipalName")),
                 SamAccountName = TryGetResult<string>(result, "samAccountName"),
                 UserPrincipalName = TryGetResult<string>(result, "userPrincipalName")
@@ -365,12 +358,11 @@ namespace Wdc.DirectoryLib
             return a[1];
         }
 
-        private string GetGCPath(string domain = null)
+        private string GetGCPath(string branch = null)
         {
             string path;
-            if (!string.IsNullOrEmpty(domain))
-            {
-                string branch = "DC=" + domain.Replace(".", ",DC=");
+            if (!string.IsNullOrEmpty(branch))
+            {   
                 path = string.Format("GC://{0}/{1}", gcHostname, branch);
             }
             else
