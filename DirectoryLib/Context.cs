@@ -176,9 +176,9 @@ namespace Wdc.DirectoryLib
             AccountStatus status = AccountStatus.UserNotFound;
 
             if (user != null)
-            {
-                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, user.Domain))
-                using (UserPrincipal u = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, user.SamAccountName))
+            {   
+                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, gcHostname))
+                using (UserPrincipal u = UserPrincipal.FindByIdentity(pc, IdentityType.DistinguishedName, user.DistinguishedName))
                 {
                     if (u == null)
                     {
@@ -350,6 +350,11 @@ namespace Wdc.DirectoryLib
         /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
         private string GetDomainFromUpn(string upn)
         {
+            if (upn == null)
+            {
+                return null;
+            }
+
             string[] a = upn.Split('@');
             if (a.Length != 2)
             {
@@ -372,6 +377,21 @@ namespace Wdc.DirectoryLib
 
             return path;
 
+        }
+
+        /// <summary>
+        /// For debugging purposes only. Prints out the contents of the SearchResult object
+        /// </summary>
+        /// <param name="result"></param>
+        private void PrintOutResult(SearchResult result)
+        {
+            foreach (var key in result.Properties.PropertyNames)
+            {
+                var valueCollection = result.Properties[key.ToString()];
+                if (valueCollection.Count > 0)
+                    Console.WriteLine(key + " : " + valueCollection[0]);
+                    
+            }
         }
     }
 }
