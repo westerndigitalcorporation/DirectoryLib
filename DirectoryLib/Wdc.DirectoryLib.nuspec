@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.0.2</version>
-	<releaseNotes>Added support for getting a user by email. Fixed bugs caused by assumptions about the format of UPNs.</releaseNotes>
+    <version>2.0.3</version>
+	<releaseNotes>Use Distinguished Name to authenticate instead of domain/SAM.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
