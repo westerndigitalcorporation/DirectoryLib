@@ -32,14 +32,19 @@ namespace Wdc.DirectoryLib
     public class Context
     {
         private string gcHostname;
+        private string searchProtocol;
 
         /// <summary>
         /// Initialize new instance of this active directory context.
         /// </summary>
-        /// <param name="gcHostname">The Global Catelog Hostname a Domain Controller.
+        /// <param name="gcHostname">The Global Catalog Hostname a Domain Controller.
         /// If no hostname is provided, the current context is used.
+        /// <param name="searchType">Whether the searches will be done as GC (default) or LDAP. 
+        /// Global Catalog will ensure that the results are searched for in the entire catalog (whether in the host 
+        /// or other domains in the forest)
+        /// But, if the host controller happens to contains the search entities, LDAP can be faster.</param>
         /// </param>
-        public Context(string gcHostname = "")
+        public Context(string gcHostname = "", SearchType searchType = SearchType.GlobalCatalog)
         {
             if (string.IsNullOrEmpty(gcHostname))
             {
@@ -50,6 +55,8 @@ namespace Wdc.DirectoryLib
             {
                 this.gcHostname = gcHostname;
             }
+
+            searchProtocol = searchType == SearchType.GlobalCatalog ? "GC" : "LDAP";
         }
 
         /// <summary>
@@ -69,8 +76,8 @@ namespace Wdc.DirectoryLib
                 throw new ArgumentException("Invalid argument: samAccountName is null or empty", "samAccountName");
             }
 
-            string branch = "DC=" + domain.Replace(".", ",DC=");
-            string path = GetGCPath(branch);
+            string branch = ConvertDomainToDistinguishedNameFormat(domain);
+            string path = GetDirectoryPath(branch);
             string filter = string.Format("(&(objectClass=person)(samAccountName={0}))", samAccountName);
 
             using (var entry = new DirectoryEntry(path))
@@ -92,9 +99,10 @@ namespace Wdc.DirectoryLib
         /// Get user by email address (user@exampl.wdc.com)
         /// </summary>
         /// <param name="email">Email address (user@exmpl.wdc.com)</param>
-        public UserAccount GetUserByEmail(string email)
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under</param>
+        public UserAccount GetUserByEmail(string email, string baseDistinguishedName = null)
         {
-            string path = GetGCPath();
+            string path = GetDirectoryPath(baseDistinguishedName);
             string filter = string.Format("(&(objectClass=person)(mail={0}))", email);
 
             using (var entry = new DirectoryEntry(path))
@@ -112,14 +120,15 @@ namespace Wdc.DirectoryLib
 
             }
         }
-        
+
         /// <summary>
         /// Get user by UserPrincipalName (last_f@exmpl.wdc.com)
         /// </summary>
         /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
-        public UserAccount GetUserByUpn(string upn)
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under</param>
+        public UserAccount GetUserByUpn(string upn, string baseDistinguishedName = null)
         {
-            string path = GetGCPath();
+            string path = GetDirectoryPath(baseDistinguishedName);
             string filter = string.Format("(&(objectClass=person)(userPrincipalName={0}))", upn);
 
             using (var entry = new DirectoryEntry(path))
@@ -167,16 +176,10 @@ namespace Wdc.DirectoryLib
         /// <param name="daysToExpiration">The number of days until the password expires</param>
         public AccountStatus Authenticate(UserAccount user, string password, long daysToExpiration = 0)
         {
-            if (daysToExpiration == 0)
-            {
-                // If the caller does not provide expiration, use the domain policy
-                daysToExpiration = GetMaxPasswordAgeInDays(user.Domain);
-            }
-
             AccountStatus status = AccountStatus.UserNotFound;
 
             if (user != null)
-            {   
+            {
                 using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, gcHostname))
                 using (UserPrincipal u = UserPrincipal.FindByIdentity(pc, IdentityType.DistinguishedName, user.DistinguishedName))
                 {
@@ -200,13 +203,22 @@ namespace Wdc.DirectoryLib
                     {
                         status = AccountStatus.MustChangePassword;
                     }
-                    else if (!u.PasswordNeverExpires && (DateTime.Now - u.LastPasswordSet.Value).TotalDays >= daysToExpiration)
-                    {
-                        status = AccountStatus.ExpiredPassword;
-                    }
                     else
                     {
-                        status = AccountStatus.InvalidPassword;
+                        if (daysToExpiration == 0)
+                        {
+                            // If the caller does not provide expiration, use the domain policy
+                            daysToExpiration = GetMaxPasswordAgeInDays(user.Domain);
+                        }
+
+                        if (!u.PasswordNeverExpires && (DateTime.Now - u.LastPasswordSet.Value).TotalDays >= daysToExpiration)
+                        {
+                            status = AccountStatus.ExpiredPassword;
+                        }
+                        else
+                        {
+                            status = AccountStatus.InvalidPassword;
+                        }
                     }
                 }
             }
@@ -229,18 +241,14 @@ namespace Wdc.DirectoryLib
             }
             else if (Regex.Match(domainName, @"(\w+.?)+").Success)
             {
-                distinguishedName = Regex.Replace(
-                    domainName,
-                    @"\w+.?",
-                    (Match m) => string.Format("DC={0}", m.Groups[0].Value).Replace('.', ',')
-                );
+                distinguishedName = ConvertDomainToDistinguishedNameFormat(domainName);
             }
             else
             {
                 throw new ArgumentException("Invalid format", "dn");
             }
 
-            using (DirectoryEntry entry = new DirectoryEntry(string.Format("GC://{0}", gcHostname)))
+            using (DirectoryEntry entry = new DirectoryEntry(GetDirectoryPath()))
             using (var search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(distinguishedName={0}))", distinguishedName)))
             {
                 SearchResult result = search.FindOne();
@@ -258,14 +266,14 @@ namespace Wdc.DirectoryLib
         {
             string domainName = null;
 
-            using (DirectoryEntry entry = new DirectoryEntry(GetGCPath()))
+            using (DirectoryEntry entry = new DirectoryEntry(GetDirectoryPath()))
             using (DirectorySearcher search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(dc={0}))", netBiosName)))
             {
                 SearchResult result = search.FindOne();
                 if (result != null)
                 {
                     string distinguishedName = TryGetResult<string>(result, "distinguishedName");
-                    domainName = distinguishedName.Replace(",DC=", ".").Replace("DC=", string.Empty);
+                    domainName = ConvertDistinguishedNameToDomainFormat(distinguishedName);
                 }
             }
 
@@ -283,15 +291,15 @@ namespace Wdc.DirectoryLib
             long days = 0;
             const long NS_IN_A_DAY = -864000000000;
 
-            string branch = "DC=" + domain.Replace(".", ",DC=");
-            string path = string.Format("LDAP://{0}/{1}", domain, branch);
+            string baseDistinguishedName = ConvertDomainToDistinguishedNameFormat(domain);
+            string path = string.Format("LDAP://{0}/{1}", gcHostname, baseDistinguishedName);
             string filter = "(maxPwdAge=*)";
 
             using (var entry = new DirectoryEntry(path))
             using (var search = new DirectorySearcher(entry, filter, new string[] { "+", "*" }, SearchScope.Base))
             {
                 var result = search.FindOne();
-                if (result.Properties.Contains("maxPwdAge"))
+                if (result != null && result.Properties.Contains("maxPwdAge"))
                 {
                     long maxPwdAge = TryGetResult<long>(result, "maxPwdAge");
 
@@ -329,7 +337,7 @@ namespace Wdc.DirectoryLib
                 Description = TryGetResult<string>(result, "description"),
                 JpegPhoto = TryGetResult<byte[]>(result, "thumbnailPhoto"),
                 DistinguishedName = TryGetResult<string>(result, "distinguishedName"),
-                Domain = GetDomainFromUpn(TryGetResult<string>(result, "userPrincipalName")),
+                Domain = GetDomainFromDistinguishedName(TryGetResult<string>(result, "distinguishedName")),
                 SamAccountName = TryGetResult<string>(result, "samAccountName"),
                 UserPrincipalName = TryGetResult<string>(result, "userPrincipalName")
             };
@@ -345,38 +353,69 @@ namespace Wdc.DirectoryLib
         }
 
         /// <summary>
-        /// Gets domain (exmpl.wdc.com) from upn (last_f@exmpl.wdc.com)
+        /// Extracts the domain component (exmpl.wdc.com) from distinguished name (...DC=exmpl,DC=wdc,DC=com)
         /// </summary>
-        /// <param name="upn">UserPrincipalName (last_f@exmpl.wdc.com)</param>
-        private string GetDomainFromUpn(string upn)
+        /// <param name="distinguishedName">Distinguished Name</param>
+        private string GetDomainFromDistinguishedName(string distinguishedName)
         {
-            if (upn == null)
+            if (distinguishedName == null)
             {
                 return null;
             }
 
-            string[] a = upn.Split('@');
-            if (a.Length != 2)
+            // The assumption is that the domain can be parsed from the distinguished name beginning
+            // with the first DC object.
+            int domainBegin = distinguishedName.IndexOf("DC");
+            if (domainBegin > -1)
             {
-                return null;
-            }
-            return a[1];
-        }
-
-        private string GetGCPath(string branch = null)
-        {
-            string path;
-            if (!string.IsNullOrEmpty(branch))
-            {   
-                path = string.Format("GC://{0}/{1}", gcHostname, branch);
+                return ConvertDistinguishedNameToDomainFormat(distinguishedName.Substring(domainBegin));
             }
             else
             {
-                path = string.Format("GC://{0}", gcHostname);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Helper function that provides the directory path string to pass onto DirectoryEntry()
+        /// constructor.
+        /// </summary>
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under.</param>
+        /// <returns></returns>
+        private string GetDirectoryPath(string baseDistinguishedName = null)
+        {
+            string path;
+            
+            if (!string.IsNullOrEmpty(baseDistinguishedName))
+            {
+                path = string.Format("{0}://{1}/{2}", searchProtocol, gcHostname, baseDistinguishedName);
+            }
+            else
+            {
+                path = string.Format("{0}://{1}", searchProtocol, gcHostname);
             }
 
             return path;
+        }
 
+        /// <summary>
+        /// Convert (example.wdc.com) -> DC=example,DC=wdc,DC=com
+        /// </summary>
+        /// <param name="domain"></param>
+        /// <returns></returns>
+        private string ConvertDomainToDistinguishedNameFormat(string domain)
+        {
+            return "DC=" + domain.Replace(".", ",DC=");
+        }
+
+        /// <summary>
+        /// Convert (DC=example,DC=wdc,DC=com) -> example.wdc.com
+        /// </summary>
+        /// <param name="distinguishedName"></param>
+        /// <returns></returns>
+        private string ConvertDistinguishedNameToDomainFormat(string distinguishedName)
+        {
+            return distinguishedName.Replace("DC=", string.Empty).Replace(",", ".");
         }
 
         /// <summary>
@@ -389,8 +428,9 @@ namespace Wdc.DirectoryLib
             {
                 var valueCollection = result.Properties[key.ToString()];
                 if (valueCollection.Count > 0)
+                {
                     Console.WriteLine(key + " : " + valueCollection[0]);
-                    
+                }
             }
         }
     }

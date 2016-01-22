@@ -137,7 +137,6 @@ namespace Wdc.DirectoryLib.Types
         public string Description { get; set; }
 
         /// <summary>
-        /// DEPRECATED - Not very accurate.
         /// Fully qualified domain name.
         /// Example: exmpl.wdc.com
         /// </summary>

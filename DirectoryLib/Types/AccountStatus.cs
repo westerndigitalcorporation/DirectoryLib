@@ -54,4 +54,17 @@ namespace Wdc.DirectoryLib.Types
         /// </summary>
         UserLockedOut
     }
+
+    public enum SearchType
+    {
+        /// <summary>
+        /// Searches the entire Global Catalog
+        /// </summary>
+        GlobalCatalog,
+
+        /// <summary>
+        /// Does an LDAP search on just the host (does not look at other domains). Faster if the domain is known
+        /// </summary>
+        LDAP
+    }
 }
