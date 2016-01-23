@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.1.0</version>
-	<releaseNotes>Allow searching using GC or LDAP protocol. Bug fix for GetMaxPasswordAgeInDays. Added parameter to most of the GetUser methods to allow searching only in a particular domain.</releaseNotes>
+    <version>2.1.1</version>
+	<releaseNotes>Bug fix for authentication again. Use user account's domain as part of authentication.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
