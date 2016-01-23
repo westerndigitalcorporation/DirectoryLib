@@ -180,7 +180,7 @@ namespace Wdc.DirectoryLib
 
             if (user != null)
             {
-                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, gcHostname))
+                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, user.Domain))
                 using (UserPrincipal u = UserPrincipal.FindByIdentity(pc, IdentityType.DistinguishedName, user.DistinguishedName))
                 {
                     if (u == null)
