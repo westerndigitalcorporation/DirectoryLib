@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.1.1</version>
-	<releaseNotes>Bug fix for authentication again. Use user account's domain as part of authentication.</releaseNotes>
+    <version>2.2.0</version>
+	<releaseNotes>Added methods to query by Guid. Also added a property to UserAccount: ObjectGuidAsString and deprecated the older property ObjectGuidAsHex, which is not formatted according to proper convention for UUID version 4.</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
