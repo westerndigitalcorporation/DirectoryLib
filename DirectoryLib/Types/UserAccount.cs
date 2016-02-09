@@ -35,7 +35,9 @@ namespace Wdc.DirectoryLib.Types
         /// <summary>
         /// The Guid represented as a Hex String.
         /// Since the Guid is 16 bytes, this string is 32 characters.
+        /// Use ObjectGuidAsString instead if you want to be able to lookup a user using GetUserByGuid()
         /// </summary>
+        [System.Obsolete("Use ObjectGuidAsString instead")]
         public string ObjectGuidAsHex
         {
             get
@@ -46,6 +48,19 @@ namespace Wdc.DirectoryLib.Types
                     hex.AppendFormat("{0:X2}", b);
                 }
                 return hex.ToString();
+            }
+        }
+
+        /// <summary>
+        /// The Guid represented as a 36 character Hex String (UUID 4)
+        /// (of the form XXXXXXXX-XXXX-4XXX-YXXX-XXXXXXXXXXXX
+        /// where X is any hexadecimal digit and Y is one of 8, 9, A, or B)
+        /// </summary>
+        public string ObjectGuidAsString
+        {
+            get
+            {
+                return new System.Guid(ObjectGuid).ToString().ToUpper();
             }
         }
 

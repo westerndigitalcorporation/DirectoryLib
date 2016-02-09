@@ -21,6 +21,7 @@ using System;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.DirectoryServices.ActiveDirectory;
+using System.Text;
 using System.Text.RegularExpressions;
 using Wdc.DirectoryLib.Types;
 
@@ -144,6 +145,67 @@ namespace Wdc.DirectoryLib
                     return GetUserFromResult(result);
                 }
             }
+        }
+
+        /// <summary>
+        /// Get user by GetUserByGuid
+        /// </summary>
+        /// <param name="guid">Represents the GUID for the object we are searching for</param>
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under</param>
+        public UserAccount GetUserByGuid(Guid guid, string baseDistinguishedName = null)
+        {
+            var byteArray = guid.ToByteArray();
+
+            // to do the query, we have to format the byte array by prepending each byte with a '\'
+            var hex = new StringBuilder(byteArray.Length * 3);
+            foreach (byte b in byteArray)
+            {
+                hex.AppendFormat(@"\{0:X2}", b);
+            }
+
+            var hexGuid = hex.ToString();
+
+            string path = GetDirectoryPath(baseDistinguishedName);
+            string filter = string.Format("(&(objectClass=person)(objectGUID={0}))", hexGuid);
+
+            using (var entry = new DirectoryEntry(path))
+            using (var search = new DirectorySearcher(entry, filter))
+            {
+                SearchResult result = search.FindOne();
+                if (result == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return GetUserFromResult(result);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get user by GUID
+        /// </summary>
+        /// <param name="guid">Array of 16 bytes</param>
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under</param>
+        public UserAccount GetUserByGuid(byte[] guid, string baseDistinguishedName = null)
+        {
+            if (guid == null || guid.Length != 16)
+            {
+                throw new ArgumentException("GUID must consist of 16 bytes.");
+            }
+            var guidObj = new Guid(guid);
+            return GetUserByGuid(guidObj, baseDistinguishedName);
+        }
+
+        /// <summary>
+        /// Get user by GUID
+        /// </summary>
+        /// <param name="guidString">String (hex) representation of guid (e.g. F47AC10B-58CC-4372-A567-0E02B2C3D479)</param>
+        /// <param name="baseDistinguishedName">Optional distinguished name of domain to search under</param>
+        public UserAccount GetUserByGuid(string guidString, string baseDistinguishedName = null)
+        {
+            return GetUserByGuid(new Guid(guidString), baseDistinguishedName);
         }
 
         /// <summary>
