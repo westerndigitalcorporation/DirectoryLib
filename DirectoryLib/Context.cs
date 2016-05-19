@@ -427,7 +427,7 @@ namespace Wdc.DirectoryLib
 
             // The assumption is that the domain can be parsed from the distinguished name beginning
             // with the first DC object.
-            int domainBegin = distinguishedName.IndexOf("DC");
+            int domainBegin = distinguishedName.IndexOf("DC=");
             if (domainBegin > -1)
             {
                 return ConvertDistinguishedNameToDomainFormat(distinguishedName.Substring(domainBegin));
