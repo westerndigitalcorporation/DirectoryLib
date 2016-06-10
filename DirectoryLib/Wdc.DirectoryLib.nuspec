@@ -2,8 +2,8 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>2.2.1</version>
-	<releaseNotes>Minor bug fix in method GetDomainFromDistinguishedName()</releaseNotes>
+    <version>2.2.3</version>
+	<releaseNotes>Bug fixes for Netbios name handling (GetDomainNameByNetBios() and GetNetBiosNameByDomainName())</releaseNotes>
     <title>$title$</title>
     <authors>$author$</authors>
 	<language>en-US</language>
