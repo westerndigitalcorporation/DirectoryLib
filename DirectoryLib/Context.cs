@@ -295,28 +295,35 @@ namespace Wdc.DirectoryLib
         /// <returns>NetBiosName (exmpl)</returns>
         public string GetNetBiosNameByDomainName(string domainName)
         {
-            string distinguishedName = string.Empty;
+            string netBiosName = null;
 
             if (Regex.Match(domainName, @"(?:(?:dc=\w+),?)+").Success)
             {
-                distinguishedName = domainName;
+                domainName = ConvertDistinguishedNameToDomainFormat(domainName);
             }
-            else if (Regex.Match(domainName, @"(\w+.?)+").Success)
-            {
-                distinguishedName = ConvertDomainToDistinguishedNameFormat(domainName);
-            }
-            else
+            else if (!Regex.Match(domainName, @"(\w+.?)+").Success)
             {
                 throw new ArgumentException("Invalid format", "dn");
             }
 
-            using (DirectoryEntry entry = new DirectoryEntry(GetDirectoryPath()))
-            using (var search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(distinguishedName={0}))", distinguishedName)))
+            using (DirectoryEntry rootDSE = new DirectoryEntry(GetDirectoryPath("RootDSE")))
             {
-                SearchResult result = search.FindOne();
+                string configurationNamingContext = rootDSE.Properties["configurationNamingContext"][0].ToString();
 
-                return result == null ? null : TryGetResult<string>(result, "dc");
+                using (DirectoryEntry searchRoot = new DirectoryEntry("LDAP://cn=Partitions," + configurationNamingContext))
+                {
+                    using (DirectorySearcher search = new DirectorySearcher(searchRoot, $"(dnsRoot={domainName})"))
+                    {
+                        SearchResult result = search.FindOne();
+                        if (result != null)
+                        {
+                            netBiosName = TryGetResult<string>(result, "netBiosName");
+                        }
+                    }
+                }
             }
+
+            return netBiosName;
         }
 
         /// <summary>
@@ -328,17 +335,22 @@ namespace Wdc.DirectoryLib
         {
             string domainName = null;
 
-            using (DirectoryEntry entry = new DirectoryEntry(GetDirectoryPath()))
-            using (DirectorySearcher search = new DirectorySearcher(entry, string.Format("(&(objectClass=domain)(dc={0}))", netBiosName)))
+            using (DirectoryEntry rootDSE = new DirectoryEntry(GetDirectoryPath("RootDSE")))
             {
-                SearchResult result = search.FindOne();
-                if (result != null)
+                string configurationNamingContext = rootDSE.Properties["configurationNamingContext"][0].ToString();
+
+                using (DirectoryEntry searchRoot = new DirectoryEntry("LDAP://cn=Partitions," + configurationNamingContext))
                 {
-                    string distinguishedName = TryGetResult<string>(result, "distinguishedName");
-                    domainName = ConvertDistinguishedNameToDomainFormat(distinguishedName);
+                    using (DirectorySearcher search = new DirectorySearcher(searchRoot, $"(netbiosname={netBiosName})"))
+                    {
+                        SearchResult result = search.FindOne();
+                        if (result != null)
+                        {
+                            domainName = TryGetResult<string>(result, "dnsRoot");
+                        }
+                    }
                 }
             }
-
             return domainName;
         }
 
