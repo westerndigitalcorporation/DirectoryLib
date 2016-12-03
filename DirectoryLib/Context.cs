@@ -18,6 +18,7 @@
 // SPDX-License-Identifier:     MIT
 
 using System;
+using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.DirectoryServices.ActiveDirectory;
@@ -147,6 +148,26 @@ namespace Wdc.DirectoryLib
             }
         }
 
+        public UserAccount GetUserByDistinguishedName(string distinguishedName)
+        {
+            string path = GetDirectoryPath();
+            string filter = $"(&(objectClass=person)(distinguishedName={distinguishedName}))";
+
+            using (var entry = new DirectoryEntry(path))
+            using (var search = new DirectorySearcher(entry, filter))
+            {
+                SearchResult result = search.FindOne();
+                if (result == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    return GetUserFromResult(result);
+                }
+            }
+        }
+
         /// <summary>
         /// Get user by GetUserByGuid
         /// </summary>
@@ -229,7 +250,7 @@ namespace Wdc.DirectoryLib
             }
             return GetUser(domain, samName);
         }
-
+        
         /// <summary>
         /// Perform authentication and return the status for the account.
         /// </summary>
@@ -413,7 +434,9 @@ namespace Wdc.DirectoryLib
                 DistinguishedName = TryGetResult<string>(result, "distinguishedName"),
                 Domain = GetDomainFromDistinguishedName(TryGetResult<string>(result, "distinguishedName")),
                 SamAccountName = TryGetResult<string>(result, "samAccountName"),
-                UserPrincipalName = TryGetResult<string>(result, "userPrincipalName")
+                UserPrincipalName = TryGetResult<string>(result, "userPrincipalName"),
+                Manager = TryGetResult<string>(result, "manager"),
+                DirectReports = TryGetResultList<string>(result, "directReports"),
             };
         }
 
@@ -424,6 +447,20 @@ namespace Wdc.DirectoryLib
                 return (T)valueCollection[0];
             else
                 return default(T);
+        }
+
+        private List<T> TryGetResultList<T>(SearchResult result, string key)
+        {
+            var list = new List<T>();
+            var valueCollection = result.Properties[key];
+            if (valueCollection.Count > 0)
+            {   
+                foreach (T val in valueCollection)
+                {
+                    list.Add(val);
+                }
+            }
+            return list;
         }
 
         /// <summary>

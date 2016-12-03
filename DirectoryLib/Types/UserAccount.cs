@@ -17,6 +17,7 @@
 // THE SOFTWARE. 
 // SPDX-License-Identifier:     MIT
 
+using System.Collections.Generic;
 using System.Text;
 
 namespace Wdc.DirectoryLib.Types
@@ -183,5 +184,17 @@ namespace Wdc.DirectoryLib.Types
         /// Used to store an image of a person using the JPEG File Interchange Format.
         /// </summary>
         public byte[] JpegPhoto { get; set; }
+
+        /// <summary>
+        /// Contains the distinguished name of the user who is the user's manager.
+        /// </summary>
+        public string Manager { get; set; }
+
+        /// <summary>
+        /// Contains the list of users that directly report to the user. The users that are listed as 
+        /// reports are those that have the property manager property set to this user. Each item in the 
+        /// list is a linked reference to the object that represents the user.
+        /// </summary>
+        public List<string> DirectReports { get; set; }
     }
 }
